@@ -16,21 +16,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
-      
-      - name: Cache Bun dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
+          node-version: '20'
+          cache: 'npm'
       
       - name: Install dependencies
-        run: bun install
+        run: npm ci
       
       - name: Extract version from tag
         id: get_version
@@ -50,7 +43,7 @@ jobs:
           echo "✓ manifest.json version matches tag: $TAG_VERSION"
       
       - name: Build plugin
-        run: bun run build
+        run: npm run build
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1

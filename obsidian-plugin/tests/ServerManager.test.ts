@@ -1,4 +1,5 @@
-import { describe, test, expect, beforeAll, afterEach } from "bun:test";
+import { describe, test, expect, beforeAll, afterEach } from "vitest";
+import { execSync } from "child_process";
 import { ServerManager, ServerState } from "../src/server/ServerManager";
 import { OpenCodeSettings } from "../src/types";
 
@@ -35,13 +36,9 @@ let currentManager: ServerManager | null = null;
 
 // Verify opencode binary is available before running tests
 beforeAll(async () => {
-  const proc = Bun.spawn(["opencode", "--version"], {
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  const exitCode = await proc.exited;
-
-  if (exitCode !== 0) {
+  try {
+    execSync("opencode --version", { stdio: "pipe" });
+  } catch {
     throw new Error(
       "opencode binary not found or not executable. " +
         "Please ensure 'opencode' is installed and available in PATH."

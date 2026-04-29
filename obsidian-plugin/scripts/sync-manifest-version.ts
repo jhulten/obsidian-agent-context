@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env npx tsx
 /**
  * Sync manifest.json version with package.json version
  * This script is run during the 'version' lifecycle hook after package.json is updated

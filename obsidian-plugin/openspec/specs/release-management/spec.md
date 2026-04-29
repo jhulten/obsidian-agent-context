@@ -9,7 +9,7 @@ The system SHALL provide commands to bump patch, minor, and major versions.
 
 #### Scenario: Patch version bump
 - **GIVEN** the current version is "0.1.0"
-- **WHEN** a developer runs `bun run version:patch`
+- **WHEN** a developer runs `npm run version:patch`
 - **THEN** the package.json version SHALL be updated to "0.1.1"
 - **AND** a git commit SHALL be created with message "0.1.1" containing the updated files
 - **AND** a git tag "v0.1.1" SHALL be created
@@ -17,7 +17,7 @@ The system SHALL provide commands to bump patch, minor, and major versions.
 
 #### Scenario: Minor version bump
 - **GIVEN** the current version is "0.1.5"
-- **WHEN** a developer runs `bun run version:minor`
+- **WHEN** a developer runs `npm run version:minor`
 - **THEN** the package.json version SHALL be updated to "0.2.0"
 - **AND** a git commit SHALL be created with message "0.2.0" containing the updated files
 - **AND** a git tag "v0.2.0" SHALL be created
@@ -25,7 +25,7 @@ The system SHALL provide commands to bump patch, minor, and major versions.
 
 #### Scenario: Major version bump
 - **GIVEN** the current version is "0.5.2"
-- **WHEN** a developer runs `bun run version:major`
+- **WHEN** a developer runs `npm run version:major`
 - **THEN** the package.json version SHALL be updated to "1.0.0"
 - **AND** a git commit SHALL be created with message "1.0.0" containing the updated files
 - **AND** a git tag "v1.0.0" SHALL be created
@@ -37,7 +37,7 @@ During any version bump, the `version` field in `manifest.json` SHALL be automat
 #### Scenario: Synchronized version bump
 - **GIVEN** package.json contains `"version": "0.1.0"`
 - **AND** manifest.json contains `"version": "0.1.0"`
-- **WHEN** a developer runs `bun run version:minor`
+- **WHEN** a developer runs `npm run version:minor`
 - **THEN** package.json SHALL be updated to `"version": "0.2.0"`
 - **AND** manifest.json SHALL be updated to `"version": "0.2.0"`
 - **AND** both files SHALL be included in the same git commit

@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vitest";
 import { WindowsProcess } from "../../src/server/process/WindowsProcess";
 
 describe.skipIf(process.platform !== "win32")("WindowsProcess", () => {

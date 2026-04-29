@@ -1,5 +1,4 @@
 node_modules/
-bun.lock
 *.js
 !esbuild.config.mjs
 !scripts/*.ts

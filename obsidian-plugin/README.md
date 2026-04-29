@@ -19,7 +19,7 @@ _Note: plugin author is not afiliated with OpenCode or Obsidian - this is a 3rd 
 
 - Desktop only (uses Node.js child processes)
 - [OpenCode CLI](https://opencode.ai) installed 
-- [Bun](https://bun.sh) installed
+- [Node.js](https://nodejs.org/) 20+ installed
 
 ## Installation
 
@@ -45,7 +45,7 @@ If you want to contribute or develop the plugin:
    ```
 2. Install dependencies and build:
    ```bash
-   bun install && bun run build
+   npm install && npm run build
    ```
 3. Enable in Obsidian Settings > Community Plugins
 4. Add AGENTS.md to your workspace root to guide the AI assistant

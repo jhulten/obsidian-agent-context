@@ -11,8 +11,9 @@ Obsidian plugin that embeds the OpenCode AI assistant via an iframe. Spawns a lo
 ## Build Commands
 
 ```bash
-bun install          # Install dependencies
-bun run build        # Production (type-check + bundle)
+npm install          # Install dependencies
+npm run build        # Production (type-check + bundle)
+npm test             # Run tests
 ```
 
 Output: `main.js` (CommonJS bundle)

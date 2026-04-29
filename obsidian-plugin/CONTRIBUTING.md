@@ -18,7 +18,7 @@ I'm also interested in collecting a set of Agent Skills useful in the context of
 
 ### Requirements
 
-- [Bun](https://bun.sh/) 1.3+
+- [Node.js](https://nodejs.org/) 20+
 - Obsidian (for testing the plugin)
 
 ### Getting Started
@@ -26,7 +26,7 @@ I'm also interested in collecting a set of Agent Skills useful in the context of
 ```bash
 git clone https://github.com/mtymek/opencode-obsidian.git
 cd opencode-obsidian
-bun install
+npm install
 ```
 
 ### Development Workflow
@@ -35,7 +35,7 @@ To work on the plugin during development:
 
 1. Build the plugin:
    ```bash
-   bun run build  # One-time production build
+   npm run build  # One-time production build
    ```
 
 2. The plugin will be built to `main.js` in the project root
@@ -48,9 +48,9 @@ To work on the plugin during development:
 ### Commands
 
 ```bash
-bun install    # Install dependencies
-bun run build  # Production build with type checking
-bun test       # Run tests
+npm install    # Install dependencies
+npm run build  # Production build with type checking
+npm test       # Run tests
 ```
 
 ## Release Process
@@ -62,9 +62,9 @@ This project uses automated GitHub releases for distribution via BRAT.
 We use semantic versioning (semver) with the following commands:
 
 ```bash
-bun run version:patch   # Bump patch version (0.1.0 -> 0.1.1) - bug fixes
-bun run version:minor   # Bump minor version (0.1.0 -> 0.2.0) - new features
-bun run version:major   # Bump major version (0.1.0 -> 1.0.0) - breaking changes
+npm run version:patch   # Bump patch version (0.1.0 -> 0.1.1) - bug fixes
+npm run version:minor   # Bump minor version (0.1.0 -> 0.2.0) - new features
+npm run version:major   # Bump major version (0.1.0 -> 1.0.0) - breaking changes
 ```
 
 ### How Releases Work
@@ -88,7 +88,7 @@ bun run version:major   # Bump major version (0.1.0 -> 1.0.0) - breaking changes
 
 ```bash
 # After your changes are merged to main...
-bun run version:minor   # or patch/major as appropriate
+npm run version:minor   # or patch/major as appropriate
 # That's it! The rest is automated.
 ```
 
@@ -96,8 +96,8 @@ bun run version:minor   # or patch/major as appropriate
 
 ## Before Submitting a PR
 
-1. Run `bun run build` to ensure type checking passes
-2. Run `bun test` to ensure all tests pass
+1. Run `npm run build` to ensure type checking passes
+2. Run `npm test` to ensure all tests pass
 3. Test the plugin in Obsidian to verify functionality
 
 ## Pull Requests

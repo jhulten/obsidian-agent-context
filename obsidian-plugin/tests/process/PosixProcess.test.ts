@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vitest";
 import { PosixProcess } from "../../src/server/process/PosixProcess";
 
 describe.skipIf(process.platform === "win32")("PosixProcess", () => {

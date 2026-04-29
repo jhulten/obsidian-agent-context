@@ -1,9 +1,0 @@
-{
-  "id": "opencode-context",
-  "name": "OpenCode Context",
-  "version": "0.3.0",
-  "minAppVersion": "1.4.0",
-  "description": "Context bridge between Obsidian and OpenCode TUI — syncs open tabs and selected text",
-  "author": "xuezhaojun",
-  "isDesktopOnly": true
-}

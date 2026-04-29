@@ -1,33 +1,55 @@
-# opencode-obsidian-plugin
+# OpenCode Context — Obsidian Plugin
 
-Plugins for integrating [OpenCode](https://opencode.ai) with [Obsidian](https://obsidian.md).
+An Obsidian plugin that records workspace state (open tabs, active file, selected text) to `.obsidian/context.json`. External tools can read this file to understand the user's current workspace context.
 
-## Structure
+Desktop only.
 
-- **obsidian-plugin/** — Obsidian plugin that embeds OpenCode in Obsidian and injects workspace context (open files, selections) into AI sessions.
-- **opencode-tui-plugin/** — OpenCode TUI plugin that displays Obsidian tab state in the terminal UI and injects open-page context into sessions.
+## How It Works
 
-## Setup
-
-### Obsidian Plugin
-
-```bash
-cd obsidian-plugin
-npm install
-npm run build
+```
+Obsidian workspace events
+    |  (active-leaf-change, file-open, file-close, layout-change, editor-selection-change)
+    v
+ContextManager (debounced)
+    |
+    v
+WorkspaceContext.gatherState()  ->  { ts, active, tabs[], selection }
+    |
+    v
+.obsidian/context.json
 ```
 
-### OpenCode TUI Plugin
+## Installation
 
-```bash
-cd opencode-tui-plugin
-npm install
-```
+1. Build:
+   ```bash
+   npm install && npm run build
+   ```
+2. Copy `main.js`, `manifest.json`, and `styles.css` to your vault's `.obsidian/plugins/opencode-context/`
+3. Enable "OpenCode Context" in Obsidian Settings > Community Plugins
 
-Then reference the plugin in your project's `.opencode/tui.json`:
+## Settings
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Project directory | Working directory. Empty = vault root | (empty) |
+| Inject workspace context | Enable/disable writing `context.json` | On |
+| Max notes in context | Limit how many open tabs are included | 20 |
+| Max selection length | Truncate selected text beyond this length | 2000 |
+
+## State File Format
 
 ```json
 {
-  "plugin": ["<path-to>/opencode-tui-plugin/plugins/obsidian-tabs.tsx"]
+  "ts": 1714400000000,
+  "active": { "path": "notes/example.md", "name": "example.md" },
+  "tabs": [
+    { "path": "notes/example.md", "name": "example.md", "isActive": true },
+    { "path": "notes/other.md", "name": "other.md", "isActive": false }
+  ],
+  "selection": {
+    "text": "selected text content",
+    "sourcePath": "notes/example.md"
+  }
 }
 ```

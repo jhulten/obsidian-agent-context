@@ -1,0 +1,24 @@
+{
+  "name": "opencode-context",
+  "version": "0.3.0",
+  "description": "Obsidian plugin that records workspace state (open tabs, active file, selection) to a local JSON file",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "npx tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+  },
+  "keywords": [
+    "obsidian",
+    "opencode"
+  ],
+  "author": "xuezhaojun",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.21.5",
+    "obsidian": "latest",
+    "tslib": "^2.6.2",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,7 +1,7 @@
 {
-  "name": "obsidian-opencode",
-  "version": "0.2.1",
-  "description": "Embed OpenCode AI assistant in Obsidian",
+  "name": "opencode-context",
+  "version": "0.3.0",
+  "description": "Obsidian plugin that bridges workspace context to OpenCode TUI",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
@@ -19,7 +19,7 @@
     "ai",
     "assistant"
   ],
-  "author": "mat",
+  "author": "xuezhaojun",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.11.0",

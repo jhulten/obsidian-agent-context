@@ -1,19 +1,18 @@
-# AGENTS.md - Obsidian OpenCode Plugin
+# AGENTS.md - OpenCode Context Plugin
 
-Guidelines for AI coding agents working on the obsidian-opencode plugin.
+Guidelines for AI coding agents working on the opencode-context Obsidian plugin.
 
 ## Project Overview
 
-Obsidian plugin that embeds the OpenCode AI assistant via an iframe. Spawns a local server process and displays its web UI in the Obsidian sidebar.
+Obsidian plugin that bridges workspace context to OpenCode TUI. Listens to workspace events (open tabs, active file, selected text) and writes state to `.opencode/obsidian-state.json` for the companion TUI plugin to consume.
 
-**Tech Stack:** TypeScript, Obsidian Plugin API, esbuild, Node.js child processes
+**Tech Stack:** TypeScript, Obsidian Plugin API, esbuild, Node.js `fs`
 
 ## Build Commands
 
 ```bash
-npm install          # Install dependencies
-npm run build        # Production (type-check + bundle)
-npm test             # Run tests
+bun install          # Install dependencies
+bun run build        # Production (type-check + bundle)
 ```
 
 Output: `main.js` (CommonJS bundle)
@@ -22,61 +21,37 @@ Output: `main.js` (CommonJS bundle)
 
 ```
 src/
-├── main.ts           # Plugin entry, extends Plugin
-├── types.ts          # Types and constants
-├── OpenCodeView.ts   # Sidebar view (ItemView) with iframe
-├── ProcessManager.ts # Server process lifecycle
-└── SettingsTab.ts    # Settings UI (PluginSettingTab)
+├── main.ts                        # Plugin entry, extends Plugin
+├── types.ts                       # Settings, ObsidianState types
+├── settings/
+│   └── SettingsTab.ts             # Settings UI (PluginSettingTab)
+└── context/
+    ├── ContextManager.ts          # Event listeners + writes JSON file
+    └── WorkspaceContext.ts        # Gathers workspace state (tabs, selection)
 ```
 
-## Coding guidelines
+## Coding Guidelines
 
 ### Naming Conventions
 
 | Type | Convention | Example |
 |------|------------|---------|
-| Classes | PascalCase | `OpenCodePlugin`, `ProcessManager` |
-| Interfaces/Types | PascalCase | `OpenCodeSettings`, `ProcessState` |
-| Constants | UPPER_CASE or camelCase | `DEFAULT_SETTINGS`, `OPENCODE_VIEW_TYPE` |
-| Variables/functions | camelCase | `getVaultPath`, `startServer` |
-| Private members | camelCase (no prefix) | `private processManager` |
-| Files | PascalCase (classes), lowercase (entry) | `ProcessManager.ts`, `main.ts` |
+| Classes | PascalCase | `OpenCodePlugin`, `ContextManager` |
+| Interfaces/Types | PascalCase | `OpenCodeSettings`, `ObsidianState` |
+| Constants | UPPER_CASE or camelCase | `DEFAULT_SETTINGS` |
+| Variables/functions | camelCase | `gatherState`, `writeState` |
+| Private members | camelCase (no prefix) | `private contextManager` |
+| Files | PascalCase (classes), lowercase (entry) | `ContextManager.ts`, `main.ts` |
 
 ### TypeScript Patterns
-- `strictNullChecks` enabled - handle null/undefined
-- Union types for state: `"stopped" | "starting" | "running" | "error"`
+- `strictNullChecks` enabled — handle null/undefined
 - `async/await` over Promises
 - Explicit return types on public methods
 
-```typescript
-getProcessState(): ProcessState {
-  return this.processManager?.getState() ?? "stopped";
-}
-```
-
 ### Obsidian API Patterns
 - Extend `Plugin` with `onload()`/`onunload()` lifecycle
-- Extend `ItemView` for views: `getViewType()`, `onOpen()`, `onClose()`
 - Extend `PluginSettingTab` for settings: `display()`
-- DOM helpers: `createEl()`, `createDiv()`, `setIcon()`
-- Register in `onload()`, clean up in `onunload()`
-
-```typescript
-this.registerView(OPENCODE_VIEW_TYPE, (leaf) => new OpenCodeView(leaf, this));
-this.addCommand({ id: "toggle-view", name: "Toggle panel", callback: () => this.toggleView() });
-```
-
-### DOM Creation
-```typescript
-const container = this.contentEl.createDiv({ cls: "opencode-container" });
-container.createEl("h3", { text: "Title" });
-container.createEl("button", { text: "Click", cls: "mod-cta" });
-```
-
-### State Management
-- Callback-based subscriptions
-- Centralized state in manager classes
-- Immediate notification on state change
+- Register events in `onload()`, clean up in `onunload()`/`destroy()`
 
 ## Config Summary
 
@@ -87,7 +62,5 @@ container.createEl("button", { text: "Click", cls: "mod-cta" });
 ## Desktop-Only
 
 Uses Node.js APIs unavailable on mobile:
-- `child_process.spawn()` for server process
-- File system via vault adapter
-
-Check for desktop environment before adding mobile-incompatible features.
+- `fs.writeFile()` for writing state JSON
+- `fs.existsSync()` / `fs.mkdirSync()` for directory creation

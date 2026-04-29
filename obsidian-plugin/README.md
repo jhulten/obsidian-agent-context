@@ -1,99 +1,75 @@
-# OpenCode plugin for Obsidian
+# OpenCode Context — Obsidian Plugin
 
+An Obsidian plugin that bridges workspace context to [OpenCode](https://opencode.ai) TUI.
 
-Give your notes AI capability by embedding Opencode [OpenCode](https://opencode.ai) AI assistant directly in Obsidian:
+It listens to Obsidian workspace events (open tabs, active file, selected text) and writes the state to `.opencode/obsidian-state.json`. The companion [OpenCode TUI plugin](../opencode-tui-plugin/) watches this file and displays the context in the terminal UI.
 
-<img src="./assets/opencode_in_obsidian.png" alt="OpenCode embeded in Obsidian" />
+## How It Works
 
-**Use cases:**
-- Summarize and distill long-form content
-- Draft, edit, and refine your writing
-- Query and explore your knowledge base
-- Generate outlines and structured notes
-
-This plugin uses OpenCode's web view that can be embedded directly into Obsidian window. Usually similar plugins would use the ACP protocol, but I want to see how how much is possible without having to implement (and manage) a custom chat UI - I want the full power of OpenCode in my Obsidian.
-
-_Note: plugin author is not afiliated with OpenCode or Obsidian - this is a 3rd party software._
+```
+Obsidian workspace events
+    ↓  (active-leaf-change, file-open, file-close, layout-change, editor-selection-change)
+ContextManager (debounced)
+    ↓
+WorkspaceContext.gatherState()  →  { ts, active, tabs[], selection }
+    ↓
+.opencode/obsidian-state.json
+    ↓
+OpenCode TUI plugin reads file  →  displays tabs + injects context into AI session
+```
 
 ## Requirements
 
-- Desktop only (uses Node.js child processes)
-- [OpenCode CLI](https://opencode.ai) installed 
-- [Node.js](https://nodejs.org/) 20+ installed
+- Desktop only (uses Node.js `fs` APIs)
+- [OpenCode CLI](https://opencode.ai) installed
+- The companion TUI plugin configured in `.opencode/tui.json`
 
 ## Installation
 
-### For Users (BRAT - Recommended for Beta Testing)
+### Manual
 
-The easiest way to install this plugin during beta is via [BRAT](https://github.com/TfTHacker/obsidian42-brat) (Beta Reviewer's Auto-update Tool):
-
-1. Install the BRAT plugin from Obsidian Community Plugins
-2. Open BRAT settings and click "Add Beta plugin"
-3. Enter: `mtymek/opencode-obsidian`
-4. Click "Add Plugin" - BRAT will install the latest release automatically
-5. Enable the OpenCode plugin in Obsidian Settings > Community Plugins
-
-BRAT will automatically check for updates and notify you when new versions are available.
-
-### For Developers
-
-If you want to contribute or develop the plugin:
-
-1. Clone to `.obsidian/plugins/obsidian-opencode` subdirectory under your vault's root:
+1. Build the plugin:
    ```bash
-   git clone https://github.com/mtymek/opencode-obsidian.git .obsidian/plugins/obsidian-opencode
+   cd obsidian-plugin
+   bun install && bun run build
    ```
-2. Install dependencies and build:
-   ```bash
-   npm install && npm run build
-   ```
-3. Enable in Obsidian Settings > Community Plugins
-4. Add AGENTS.md to your workspace root to guide the AI assistant
+2. Copy `main.js`, `manifest.json`, and `styles.css` to your vault's `.obsidian/plugins/opencode-context/` directory
+3. Enable "OpenCode Context" in Obsidian Settings > Community Plugins
 
-## Usage
+### TUI Plugin Setup
 
-- Click the terminal icon in the ribbon, or
-- `Cmd/Ctrl+Shift+O` to toggle the panel
-- Server starts automatically when you open the panel
+In your project's `.opencode/tui.json`, point to the TUI plugin:
 
+```json
+{
+  "plugin": ["/path/to/opencode-tui-plugin/plugins/obsidian-tabs.tsx"]
+}
+```
 
 ## Settings
 
-### Custom Command Mode
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Project directory | Working directory for OpenCode. Empty = vault root | (empty) |
+| Inject workspace context | Enable/disable writing `obsidian-state.json` | On |
+| Max notes in context | Limit how many open tabs are included | 20 |
+| Max selection length | Truncate selected text beyond this length | 2000 |
 
-Enable "Use custom command" when you need more control over how OpenCode starts—for example, to add extra CLI flags, use a custom wrapper script, or run OpenCode through a container or virtual environment.
+## State File Format
 
-When using custom command:
+The plugin writes `.opencode/obsidian-state.json` with this structure:
 
-- **Hostname and port must match** the values set in the Port and Hostname fields above
-- You **must include `--cors app://obsidian.md`** to allow Obsidian to embed the OpenCode interface
-
-Example:
-```bash
-opencode serve --port 14096 --hostname 127.0.0.1 --cors app://obsidian.md
+```json
+{
+  "ts": 1714400000000,
+  "active": { "path": "notes/example.md", "name": "example.md" },
+  "tabs": [
+    { "path": "notes/example.md", "name": "example.md", "isActive": true },
+    { "path": "notes/other.md", "name": "other.md", "isActive": false }
+  ],
+  "selection": {
+    "text": "selected text content",
+    "sourcePath": "notes/example.md"
+  }
+}
 ```
-
-Other settings (port, hostname, auto-start, view location, context injection) are available through the settings UI and are self-explanatory.
-
-### Context injection (experimental)
-
-This plugin can automatically inject context to the running OC instance: list of open notes and currently selected text.
-
-Currently, this is work-in-progress feature with some limitations - it won't work when creating new session from OC interface.
-
-## Windows Troubleshooting
-
-If you see "Executable not found at 'opencode'" despite opencode being installed:
-
-1. Find your opencode.cmd path:
-   ```
-   where opencode.cmd
-   ```
-
-2. Configure the full path in plugin settings:
-   ```
-   C:\Users\{username}\AppData\Roaming\npm\opencode.cmd
-   ```
-
-This is due to Electron/Obsidian not fully inheriting PATH on Windows.
-

@@ -1,6 +1,6 @@
 {
-  "name": "obsidian-context-recorder",
-  "version": "0.3.0",
+  "name": "obsidian-context",
+  "version": "0.1.0",
   "description": "Obsidian plugin that records workspace state (open tabs, active file, selection) to a local JSON file",
   "main": "main.js",
   "scripts": {

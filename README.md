@@ -25,7 +25,7 @@ WorkspaceContext.gatherState()  ->  { ts, active, tabs[], selection }
    ```bash
    npm install && npm run build
    ```
-2. Copy `main.js`, `manifest.json`, and `styles.css` to your vault's `.obsidian/plugins/obsidian-context-recorder/`
+2. Copy `main.js`, `manifest.json`, and `styles.css` to your vault's `.obsidian/plugins/obsidian-context/`
 3. Enable "Context Recorder" in Obsidian Settings > Community Plugins
 
 ## Settings

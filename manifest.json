@@ -1,7 +1,7 @@
 {
-  "id": "obsidian-context-recorder",
+  "id": "obsidian-context",
   "name": "Context Recorder",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "minAppVersion": "1.4.0",
   "description": "Records open tabs, active file, and selected text to .obsidian/context.json",
   "author": "xuezhaojun",

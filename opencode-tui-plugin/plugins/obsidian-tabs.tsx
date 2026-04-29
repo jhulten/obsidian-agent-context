@@ -15,13 +15,19 @@ type TabInfo = {
   isActive: boolean
 }
 
+type SelectionInfo = {
+  text: string
+  sourcePath: string
+}
+
 type ObsidianState = {
   ts: number
   active: { path: string; name: string } | null
   tabs: TabInfo[]
+  selection: SelectionInfo | null
 }
 
-const EMPTY: ObsidianState = { ts: 0, active: null, tabs: [] }
+const EMPTY: ObsidianState = { ts: 0, active: null, tabs: [], selection: null }
 
 // ── File watcher ──
 
@@ -86,8 +92,9 @@ function TabsBar(props: { api: TuiPluginApi; state: ObsidianState }) {
     const otherCount = activeName
       ? s.tabs.filter((t) => !t.isActive).length
       : s.tabs.length
+    const hasSelection = !!(s.selection && s.selection.text.trim())
 
-    return { activeName, otherCount, total: s.tabs.length }
+    return { activeName, otherCount, total: s.tabs.length, hasSelection }
   })
 
   return (
@@ -112,6 +119,11 @@ function TabsBar(props: { api: TuiPluginApi; state: ObsidianState }) {
                 {display()!.total} pages
               </span>
             )}
+            {display()!.hasSelection ? (
+              <span style={{ fg: theme().secondary }}>
+                {" "}[selection]
+              </span>
+            ) : null}
           </text>
         </box>
       ) : null}
@@ -174,6 +186,13 @@ const tui: TuiPlugin = async (api) => {
     for (const tab of s.tabs) {
       const marker = tab.isActive ? " (active)" : ""
       lines.push(`  - ${tab.path}${marker}`)
+    }
+    if (s.selection && s.selection.text.trim()) {
+      lines.push("")
+      lines.push(`Selected text (from ${s.selection.sourcePath}):`)
+      lines.push('"""')
+      lines.push(s.selection.text)
+      lines.push('"""')
     }
     lines.push("Use this context to understand what the user is working on.")
     lines.push("</system-reminder>")

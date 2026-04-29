@@ -1,6 +1,6 @@
-# AGENTS.md - OpenCode Context Plugin
+# AGENTS.md - Context Recorder Plugin
 
-Guidelines for AI coding agents working on the opencode-context Obsidian plugin.
+Guidelines for AI coding agents working on this Obsidian plugin.
 
 ## Project Overview
 
@@ -36,8 +36,8 @@ src/
 
 | Type | Convention | Example |
 |------|------------|---------|
-| Classes | PascalCase | `OpenCodePlugin`, `ContextManager` |
-| Interfaces/Types | PascalCase | `OpenCodeSettings`, `ObsidianState` |
+| Classes | PascalCase | `ContextPlugin`, `ContextManager` |
+| Interfaces/Types | PascalCase | `PluginSettings`, `ObsidianState` |
 | Constants | UPPER_CASE or camelCase | `DEFAULT_SETTINGS` |
 | Variables/functions | camelCase | `gatherState`, `writeState` |
 | Private members | camelCase (no prefix) | `private contextManager` |

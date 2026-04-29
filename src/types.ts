@@ -1,18 +1,15 @@
-export interface OpenCodeSettings {
-  projectDirectory: string;
+export interface PluginSettings {
   injectWorkspaceContext: boolean;
   maxNotesInContext: number;
   maxSelectionLength: number;
 }
 
-export const DEFAULT_SETTINGS: OpenCodeSettings = {
-  projectDirectory: "",
+export const DEFAULT_SETTINGS: PluginSettings = {
   injectWorkspaceContext: true,
   maxNotesInContext: 20,
   maxSelectionLength: 2000,
 };
 
-// JSON shape written to .obsidian/context.json
 // Shape of the JSON written to .obsidian/context.json
 export type TabInfo = {
   path: string;

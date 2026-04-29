@@ -1,19 +1,19 @@
 import { App, EventRef, MarkdownView } from "obsidian";
 import { writeFile } from "fs";
 import { join } from "path";
-import { OpenCodeSettings } from "../types";
+import { PluginSettings } from "../types";
 import { WorkspaceContext } from "./WorkspaceContext";
 
 type ContextManagerDeps = {
   app: App;
-  settings: OpenCodeSettings;
+  settings: PluginSettings;
   getVaultBasePath: () => string;
   registerEvent: (ref: EventRef) => void;
 };
 
 export class ContextManager {
   private app: App;
-  private settings: OpenCodeSettings;
+  private settings: PluginSettings;
   private workspaceContext: WorkspaceContext;
   private getVaultBasePath: () => string;
   private registerEvent: (ref: EventRef) => void;
@@ -29,7 +29,7 @@ export class ContextManager {
     this.registerEvent = deps.registerEvent;
   }
 
-  updateSettings(settings: OpenCodeSettings): void {
+  updateSettings(settings: PluginSettings): void {
     this.settings = settings;
     this.updateListeners();
   }
@@ -136,11 +136,11 @@ export class ContextManager {
       const filePath = join(basePath, ".obsidian", "context.json");
       writeFile(filePath, JSON.stringify(state, null, 2), "utf-8", (err) => {
         if (err) {
-          console.error("[OpenCode] Failed to write context.json:", err);
+          console.error("[ContextRecorder] Failed to write context.json:", err);
         }
       });
     } catch (err) {
-      console.error("[OpenCode] Failed to write context.json:", err);
+      console.error("[ContextRecorder] Failed to write context.json:", err);
     }
   }
 

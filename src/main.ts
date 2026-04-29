@@ -1,15 +1,13 @@
 import { Plugin } from "obsidian";
-import { OpenCodeSettings, DEFAULT_SETTINGS } from "./types";
-import { OpenCodeSettingTab } from "./settings/SettingsTab";
+import { PluginSettings, DEFAULT_SETTINGS } from "./types";
+import { ContextSettingTab } from "./settings/SettingsTab";
 import { ContextManager } from "./context/ContextManager";
 
-export default class OpenCodePlugin extends Plugin {
-  settings: OpenCodeSettings = DEFAULT_SETTINGS;
+export default class ContextPlugin extends Plugin {
+  settings: PluginSettings = DEFAULT_SETTINGS;
   private contextManager!: ContextManager;
 
   async onload(): Promise<void> {
-    console.log("Loading OpenCode plugin");
-
     await this.loadSettings();
 
     this.contextManager = new ContextManager({
@@ -20,7 +18,7 @@ export default class OpenCodePlugin extends Plugin {
     });
 
     this.addSettingTab(
-      new OpenCodeSettingTab(
+      new ContextSettingTab(
         this.app,
         this,
         this.settings,
@@ -32,8 +30,6 @@ export default class OpenCodePlugin extends Plugin {
     this.app.workspace.onLayoutReady(() => {
       this.contextManager.start();
     });
-
-    console.log("OpenCode plugin loaded");
   }
 
   async onunload(): Promise<void> {

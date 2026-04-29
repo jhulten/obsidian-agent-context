@@ -1,4 +1,4 @@
-# OpenCode Context — Obsidian Plugin
+# Context Recorder — Obsidian Plugin
 
 An Obsidian plugin that records workspace state (open tabs, active file, selected text) to `.obsidian/context.json`. External tools can read this file to understand the user's current workspace context.
 
@@ -25,14 +25,13 @@ WorkspaceContext.gatherState()  ->  { ts, active, tabs[], selection }
    ```bash
    npm install && npm run build
    ```
-2. Copy `main.js`, `manifest.json`, and `styles.css` to your vault's `.obsidian/plugins/opencode-context/`
-3. Enable "OpenCode Context" in Obsidian Settings > Community Plugins
+2. Copy `main.js`, `manifest.json`, and `styles.css` to your vault's `.obsidian/plugins/obsidian-context-recorder/`
+3. Enable "Context Recorder" in Obsidian Settings > Community Plugins
 
 ## Settings
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| Project directory | Working directory. Empty = vault root | (empty) |
 | Inject workspace context | Enable/disable writing `context.json` | On |
 | Max notes in context | Limit how many open tabs are included | 20 |
 | Max selection length | Truncate selected text beyond this length | 2000 |

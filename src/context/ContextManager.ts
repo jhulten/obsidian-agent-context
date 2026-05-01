@@ -35,9 +35,10 @@ export class ContextManager {
 
   updateSettings(settings: PluginSettings): void {
     const intervalChanged = settings.refreshIntervalMs !== this.settings.refreshIntervalMs;
+    const enabledChanged = settings.injectWorkspaceContext !== this.settings.injectWorkspaceContext;
     this.settings = settings;
     this.updateListeners();
-    if (intervalChanged) {
+    if (settings.injectWorkspaceContext && (intervalChanged || enabledChanged)) {
       this.startPeriodicRefresh();
     }
   }

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ContextManager } from "../ContextManager";
 import type { PluginSettings } from "../../types";
+import { DEFAULT_SETTINGS } from "../../types";
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -17,9 +18,12 @@ const { mockWriteFile, mockGatherState } = vi.hoisted(() => ({
   }),
 }));
 
-// Stub the heavy Obsidian module – only MarkdownView is referenced at runtime.
+// Stub the heavy Obsidian module – only MarkdownView is used as a runtime value;
+// App, EventRef, and Workspace are TypeScript-only type imports in ContextManager.
 vi.mock("obsidian", () => ({
   MarkdownView: class MarkdownView {},
+  App: class App {},
+  Workspace: class Workspace {},
 }));
 
 // Capture writeFile calls without touching the real filesystem.
@@ -42,13 +46,6 @@ vi.mock("../WorkspaceContext", () => ({
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-const DEFAULT_SETTINGS: PluginSettings = {
-  injectWorkspaceContext: true,
-  maxNotesInContext: 20,
-  maxSelectionLength: 2000,
-  refreshIntervalMs: 3000,
-};
 
 function makeManager(overrides: Partial<PluginSettings> = {}, cleanup: boolean = true) {
   const settings: PluginSettings = { ...DEFAULT_SETTINGS, ...overrides };
@@ -98,6 +95,7 @@ describe("ContextManager", () => {
     }
     vi.clearAllTimers();
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   // -------------------------------------------------------------------------
@@ -144,7 +142,8 @@ describe("ContextManager", () => {
 
       manager.updateSettings({ ...DEFAULT_SETTINGS, injectWorkspaceContext: true });
 
-      vi.runAllTimers();
+      // Advance past the warmup timeout and one periodic tick.
+      vi.advanceTimersByTime(DEFAULT_SETTINGS.refreshIntervalMs);
 
       expect(mockWriteFile).toHaveBeenCalled();
     });
@@ -226,6 +225,19 @@ describe("ContextManager", () => {
 
       expect(clearIntervalSpy).toHaveBeenCalled();
     });
+
+    it("starts periodic interval when feature is enabled via updateSettings", () => {
+      const setIntervalSpy = vi.spyOn(global, "setInterval");
+      const { manager } = makeManager({ injectWorkspaceContext: false, refreshIntervalMs: 3000 });
+
+      manager.start();
+      setIntervalSpy.mockClear();
+
+      manager.updateSettings({ ...DEFAULT_SETTINGS, injectWorkspaceContext: true, refreshIntervalMs: 3000 });
+
+      const calls = setIntervalSpy.mock.calls.filter(([, delay]) => delay === 3000);
+      expect(calls.length).toBeGreaterThan(0);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -259,6 +271,19 @@ describe("ContextManager", () => {
 
       // Same interval value – no restart expected.
       manager.updateSettings({ ...DEFAULT_SETTINGS, refreshIntervalMs: 3000 });
+
+      expect(setIntervalSpy).not.toHaveBeenCalled();
+    });
+
+    it("does not start a periodic interval when feature is disabled and interval changes", () => {
+      const setIntervalSpy = vi.spyOn(global, "setInterval");
+      const { manager } = makeManager({ injectWorkspaceContext: false, refreshIntervalMs: 3000 });
+
+      manager.start();
+      setIntervalSpy.mockClear();
+
+      // Feature is still disabled – changing the interval must not start a timer.
+      manager.updateSettings({ ...DEFAULT_SETTINGS, injectWorkspaceContext: false, refreshIntervalMs: 5000 });
 
       expect(setIntervalSpy).not.toHaveBeenCalled();
     });

@@ -1,6 +1,6 @@
 import { App, EventRef, MarkdownView, Workspace } from "obsidian";
 import { writeFile } from "fs";
-import { join } from "path";
+import { join, resolve, sep } from "path";
 import { PluginSettings } from "../types";
 import { WorkspaceContext } from "./WorkspaceContext";
 
@@ -157,8 +157,21 @@ export class ContextManager {
     );
 
     try {
+      // Resolve the absolute path and verify it stays within the vault
+      const vaultRoot = resolve(basePath) + sep;
+
       // .obsidian/ directory is always created by Obsidian itself
-      const filePath = join(basePath, this.getConfigDir(), "context.json");
+      const filePath = resolve(basePath, this.getConfigDir(), "context.json");
+
+      // Validate that the resolved file path is within the vault directory
+      if (!filePath.startsWith(vaultRoot)) {
+        console.error(
+          "[AgentContext] Refusing to write outside vault:",
+          filePath,
+        );
+        return;
+      }
+
       writeFile(filePath, JSON.stringify(state, null, 2), "utf-8", (err) => {
         if (err) {
           console.error("[AgentContext] Failed to write context.json:", err);

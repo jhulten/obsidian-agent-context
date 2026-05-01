@@ -272,11 +272,8 @@ describe("ContextManager", () => {
 
       maliciousManager.start();
 
-      // writeFile must not be called with a path outside /vault/
-      const outsideVaultCalls = mockWriteFile.mock.calls.filter(
-        ([filePath]: [string]) => !filePath.startsWith("/vault")
-      );
-      expect(outsideVaultCalls).toHaveLength(0);
+      // Escaping the vault must prevent any write attempt entirely.
+      expect(mockWriteFile).not.toHaveBeenCalled();
 
       maliciousManager.destroy();
     });

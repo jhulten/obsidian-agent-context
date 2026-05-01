@@ -1,8 +1,14 @@
 # Agent Context — Obsidian Plugin
 
-An Obsidian plugin that records workspace state (open tabs, active file, selected text) to `.obsidian/context.json`. External AI agents and tools can read this file to understand the user's current workspace context.
+Export workspace state so AI agents can understand your current Obsidian context.
 
 Desktop only.
+
+## Why
+
+When you use external AI agents (such as Claude Code, Cursor, OpenCode, or custom agents), they have no way of knowing what you're currently looking at in Obsidian — which files are open, which note is active, or what text you've selected.
+
+This plugin continuously writes that workspace state to `.obsidian/context.json`. Any agent running outside Obsidian can read this file and gain awareness of your current editing context, enabling more relevant and accurate assistance.
 
 ## How It Works
 

@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   release:
@@ -28,7 +28,7 @@ jobs:
       - name: Extract version from tag
         id: get_version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+          VERSION=${GITHUB_REF#refs/tags/}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
       
@@ -40,7 +40,7 @@ jobs:
             echo "Error: manifest.json version ($MANIFEST_VERSION) does not match tag version ($TAG_VERSION)"
             exit 1
           fi
-          echo "✓ manifest.json version matches tag: $TAG_VERSION"
+          echo "Manifest version matches tag: $TAG_VERSION"
       
       - name: Build plugin
         run: npm run build
@@ -49,7 +49,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           name: ${{ steps.get_version.outputs.version }}
-          prerelease: true
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             manifest.json

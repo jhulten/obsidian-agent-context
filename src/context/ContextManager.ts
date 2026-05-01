@@ -136,11 +136,11 @@ export class ContextManager {
       const filePath = join(basePath, ".obsidian", "context.json");
       writeFile(filePath, JSON.stringify(state, null, 2), "utf-8", (err) => {
         if (err) {
-          console.error("[ContextRecorder] Failed to write context.json:", err);
+          console.error("[AgentContext] Failed to write context.json:", err);
         }
       });
     } catch (err) {
-      console.error("[ContextRecorder] Failed to write context.json:", err);
+      console.error("[AgentContext] Failed to write context.json:", err);
     }
   }
 

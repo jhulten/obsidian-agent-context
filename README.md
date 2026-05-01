@@ -1,6 +1,6 @@
-# Context Recorder — Obsidian Plugin
+# Agent Context — Obsidian Plugin
 
-An Obsidian plugin that records workspace state (open tabs, active file, selected text) to `.obsidian/context.json`. External tools can read this file to understand the user's current workspace context.
+An Obsidian plugin that records workspace state (open tabs, active file, selected text) to `.obsidian/context.json`. External AI agents and tools can read this file to understand the user's current workspace context.
 
 Desktop only.
 
@@ -25,8 +25,8 @@ WorkspaceContext.gatherState()  ->  { ts, active, tabs[], selection }
    ```bash
    npm install && npm run build
    ```
-2. Copy `main.js`, `manifest.json`, and `styles.css` to your vault's `.obsidian/plugins/obsidian-context/`
-3. Enable "Context Recorder" in Obsidian Settings > Community Plugins
+2. Copy `main.js`, `manifest.json`, and `styles.css` to your vault's `.obsidian/plugins/agent-context/`
+3. Enable "Agent Context" in Obsidian Settings > Community Plugins
 
 ## Settings
 

@@ -1,4 +1,4 @@
-# AGENTS.md - Context Recorder Plugin
+# AGENTS.md - Agent Context Plugin
 
 Guidelines for AI coding agents working on this Obsidian plugin.
 

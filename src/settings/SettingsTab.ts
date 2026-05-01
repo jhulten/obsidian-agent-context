@@ -14,7 +14,7 @@ export class ContextSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Context Recorder Settings" });
+    containerEl.createEl("h2", { text: "Agent Context Settings" });
 
     new Setting(containerEl)
       .setName("Inject workspace context")

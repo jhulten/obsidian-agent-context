@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { Plugin, FileSystemAdapter } from "obsidian";
 import { PluginSettings, DEFAULT_SETTINGS } from "./types";
 import { ContextSettingTab } from "./settings/SettingsTab";
 import { ContextManager } from "./context/ContextManager";
@@ -14,6 +14,7 @@ export default class ContextPlugin extends Plugin {
       app: this.app,
       settings: this.settings,
       getVaultBasePath: () => this.getVaultBasePath(),
+      getConfigDir: () => this.app.vault.configDir,
       registerEvent: (ref) => this.registerEvent(ref),
     });
 
@@ -32,7 +33,7 @@ export default class ContextPlugin extends Plugin {
     });
   }
 
-  async onunload(): Promise<void> {
+  onunload(): void {
     this.contextManager.destroy();
   }
 
@@ -46,7 +47,10 @@ export default class ContextPlugin extends Plugin {
   }
 
   private getVaultBasePath(): string {
-    const adapter = this.app.vault.adapter as any;
-    return adapter.basePath || "";
+    const adapter = this.app.vault.adapter;
+    if (adapter instanceof FileSystemAdapter) {
+      return adapter.getBasePath();
+    }
+    return "";
   }
 }

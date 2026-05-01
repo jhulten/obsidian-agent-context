@@ -14,12 +14,12 @@ export class ContextSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Agent Context Settings" });
+    new Setting(containerEl).setName("Agent context settings").setHeading();
 
     new Setting(containerEl)
       .setName("Inject workspace context")
       .setDesc(
-        "Write open note paths and selections to .obsidian/context.json for external tools to read"
+        "Write open note paths and selections to the config folder's context.json for external tools to read"
       )
       .addToggle((toggle) =>
         toggle

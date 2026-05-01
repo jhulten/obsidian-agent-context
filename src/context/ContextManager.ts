@@ -1,4 +1,4 @@
-import { App, EventRef, MarkdownView } from "obsidian";
+import { App, EventRef, MarkdownView, Workspace } from "obsidian";
 import { writeFile } from "fs";
 import { join } from "path";
 import { PluginSettings } from "../types";
@@ -8,6 +8,7 @@ type ContextManagerDeps = {
   app: App;
   settings: PluginSettings;
   getVaultBasePath: () => string;
+  getConfigDir: () => string;
   registerEvent: (ref: EventRef) => void;
 };
 
@@ -16,6 +17,7 @@ export class ContextManager {
   private settings: PluginSettings;
   private workspaceContext: WorkspaceContext;
   private getVaultBasePath: () => string;
+  private getConfigDir: () => string;
   private registerEvent: (ref: EventRef) => void;
 
   private contextEventRefs: EventRef[] = [];
@@ -26,6 +28,7 @@ export class ContextManager {
     this.settings = deps.settings;
     this.workspaceContext = new WorkspaceContext(this.app);
     this.getVaultBasePath = deps.getVaultBasePath;
+    this.getConfigDir = deps.getConfigDir;
     this.registerEvent = deps.registerEvent;
   }
 
@@ -65,7 +68,7 @@ export class ContextManager {
       this.scheduleRefresh();
     });
 
-    const fileCloseRef = (this.app.workspace as any).on("file-close", () => {
+    const fileCloseRef = (this.app.workspace as Workspace & { on(name: "file-close", callback: () => void): EventRef }).on("file-close", () => {
       this.scheduleRefresh();
     });
 
@@ -73,7 +76,7 @@ export class ContextManager {
       this.scheduleRefresh();
     });
 
-    const selectionChangeRef = (this.app.workspace as any).on(
+    const selectionChangeRef = (this.app.workspace as Workspace & { on(name: "editor-selection-change", callback: (editor: unknown, view: unknown) => void): EventRef }).on(
       "editor-selection-change",
       (_editor: unknown, view: unknown) => {
         if (view instanceof MarkdownView) {
@@ -133,7 +136,7 @@ export class ContextManager {
 
     try {
       // .obsidian/ directory is always created by Obsidian itself
-      const filePath = join(basePath, ".obsidian", "context.json");
+      const filePath = join(basePath, this.getConfigDir(), "context.json");
       writeFile(filePath, JSON.stringify(state, null, 2), "utf-8", (err) => {
         if (err) {
           console.error("[AgentContext] Failed to write context.json:", err);

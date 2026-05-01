@@ -1,4 +1,4 @@
-import { App, MarkdownView, WorkspaceLeaf } from "obsidian";
+import { App, MarkdownView, View, WorkspaceLeaf } from "obsidian";
 import { ObsidianState, SelectionInfo, TabInfo } from "../types";
 
 export class WorkspaceContext {
@@ -36,7 +36,7 @@ export class WorkspaceContext {
 
     this.app.workspace.iterateAllLeaves((leaf: WorkspaceLeaf) => {
       // Get the file from the leaf's view state, works for all view types
-      const file = (leaf.view as any)?.file;
+      const file = (leaf.view as View & { file?: { path: string; name: string } })?.file;
       const path = file?.path as string | undefined;
       const name = file?.name as string | undefined;
       if (path && name && !seen.has(path)) {

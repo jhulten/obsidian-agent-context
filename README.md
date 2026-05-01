@@ -21,12 +21,29 @@ WorkspaceContext.gatherState()  ->  { ts, active, tabs[], selection }
 
 ## Installation
 
-1. Build:
+### From Community Plugins
+
+1. Open Obsidian Settings > Community Plugins
+2. Search for "Agent Context"
+3. Click Install, then Enable
+
+### Manual Installation
+
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/xuezhaojun/obsidian-agent-context/releases/latest)
+2. Create a folder `.obsidian/plugins/agent-context/` in your vault
+3. Copy the downloaded files into that folder
+4. Restart Obsidian and enable "Agent Context" in Settings > Community Plugins
+
+### Build from Source
+
+1. Clone this repository and build:
    ```bash
+   git clone https://github.com/xuezhaojun/obsidian-agent-context.git
+   cd obsidian-agent-context
    npm install && npm run build
    ```
 2. Copy `main.js`, `manifest.json`, and `styles.css` to your vault's `.obsidian/plugins/agent-context/`
-3. Enable "Agent Context" in Obsidian Settings > Community Plugins
+3. Restart Obsidian and enable "Agent Context" in Settings > Community Plugins
 
 ## Settings
 

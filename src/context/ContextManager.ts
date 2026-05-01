@@ -22,6 +22,7 @@ export class ContextManager {
 
   private contextEventRefs: EventRef[] = [];
   private contextRefreshTimer: number | null = null;
+  private periodicRefreshTimer: number | null = null;
 
   constructor(deps: ContextManagerDeps) {
     this.app = deps.app;
@@ -33,17 +34,37 @@ export class ContextManager {
   }
 
   updateSettings(settings: PluginSettings): void {
+    const intervalChanged = settings.refreshIntervalMs !== this.settings.refreshIntervalMs;
     this.settings = settings;
     this.updateListeners();
+    if (intervalChanged) {
+      this.startPeriodicRefresh();
+    }
   }
 
   /** Start listening (call after settings are loaded). */
   start(): void {
     this.updateListeners();
-    // Write initial state immediately, then again after a delay
-    // to catch tabs that are still loading at startup.
     this.writeState();
     window.setTimeout(() => this.writeState(), 2000);
+    if (this.settings.injectWorkspaceContext) {
+      this.startPeriodicRefresh();
+    }
+  }
+
+  private startPeriodicRefresh(): void {
+    this.stopPeriodicRefresh();
+    this.periodicRefreshTimer = window.setInterval(
+      () => this.writeState(),
+      this.settings.refreshIntervalMs
+    );
+  }
+
+  private stopPeriodicRefresh(): void {
+    if (this.periodicRefreshTimer !== null) {
+      window.clearInterval(this.periodicRefreshTimer);
+      this.periodicRefreshTimer = null;
+    }
   }
 
   private updateListeners(): void {
@@ -105,6 +126,7 @@ export class ContextManager {
       window.clearTimeout(this.contextRefreshTimer);
       this.contextRefreshTimer = null;
     }
+    this.stopPeriodicRefresh();
   }
 
   private scheduleRefresh(delayMs: number = 300): void {

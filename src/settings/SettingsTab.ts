@@ -57,5 +57,19 @@ export class ContextSettingTab extends PluginSettingTab {
             await this.onSettingsChange();
           })
       );
+
+    new Setting(containerEl)
+      .setName("Refresh interval")
+      .setDesc("How often to sync open tabs (seconds)")
+      .addSlider((slider) =>
+        slider
+          .setLimits(1, 30, 1)
+          .setValue(this.settings.refreshIntervalMs / 1000)
+          .setDynamicTooltip()
+          .onChange(async (value) => {
+            this.settings.refreshIntervalMs = value * 1000;
+            await this.onSettingsChange();
+          })
+      );
   }
 }

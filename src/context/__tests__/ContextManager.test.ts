@@ -50,7 +50,7 @@ const DEFAULT_SETTINGS: PluginSettings = {
   refreshIntervalMs: 3000,
 };
 
-function makeManager(overrides: Partial<PluginSettings> = {}) {
+function makeManager(overrides: Partial<PluginSettings> = {}, cleanup: boolean = true) {
   const settings: PluginSettings = { ...DEFAULT_SETTINGS, ...overrides };
 
   const workspaceOn = vi.fn().mockReturnValue({});
@@ -68,6 +68,10 @@ function makeManager(overrides: Partial<PluginSettings> = {}) {
     getConfigDir: () => ".obsidian",
     registerEvent,
   });
+
+  if (cleanup) {
+    managersToCleanup.push(manager);
+  }
 
   return { manager, registerEvent, workspaceOn, workspaceOffref };
 }
@@ -103,7 +107,6 @@ describe("ContextManager", () => {
   describe("writeState guard when disabled", () => {
     it("does not write context.json when injectWorkspaceContext is false", () => {
       const { manager } = makeManager({ injectWorkspaceContext: false });
-      managersToCleanup.push(manager);
 
       manager.start();
       vi.runAllTimers();
@@ -113,7 +116,6 @@ describe("ContextManager", () => {
 
     it("writes context.json when injectWorkspaceContext is true", () => {
       const { manager } = makeManager({ injectWorkspaceContext: true });
-      managersToCleanup.push(manager);
 
       manager.start();
       // writeState is called synchronously inside start()
@@ -122,7 +124,6 @@ describe("ContextManager", () => {
 
     it("stops writing after the feature is disabled via updateSettings", () => {
       const { manager } = makeManager({ injectWorkspaceContext: true });
-      managersToCleanup.push(manager);
 
       manager.start();
       mockWriteFile.mockClear();
@@ -137,7 +138,6 @@ describe("ContextManager", () => {
 
     it("resumes writing after the feature is re-enabled via updateSettings", () => {
       const { manager } = makeManager({ injectWorkspaceContext: false });
-      managersToCleanup.push(manager);
 
       manager.start();
       mockWriteFile.mockClear();
@@ -158,7 +158,6 @@ describe("ContextManager", () => {
     it("starts a periodic interval when enabled", () => {
       const setIntervalSpy = vi.spyOn(global, "setInterval");
       const { manager } = makeManager({ injectWorkspaceContext: true, refreshIntervalMs: 3000 });
-      managersToCleanup.push(manager);
 
       manager.start();
 
@@ -171,7 +170,6 @@ describe("ContextManager", () => {
     it("does not start a periodic interval when disabled", () => {
       const setIntervalSpy = vi.spyOn(global, "setInterval");
       const { manager } = makeManager({ injectWorkspaceContext: false, refreshIntervalMs: 3000 });
-      managersToCleanup.push(manager);
 
       manager.start();
 
@@ -183,7 +181,6 @@ describe("ContextManager", () => {
 
     it("calls writeState on each periodic tick when enabled", () => {
       const { manager } = makeManager({ injectWorkspaceContext: true, refreshIntervalMs: 3000 });
-      managersToCleanup.push(manager);
 
       manager.start();
       const countAfterStart = mockWriteFile.mock.calls.length;
@@ -195,7 +192,6 @@ describe("ContextManager", () => {
     it("stops the periodic interval on destroy()", () => {
       const clearIntervalSpy = vi.spyOn(global, "clearInterval");
       const { manager } = makeManager({ injectWorkspaceContext: true });
-      managersToCleanup.push(manager);
 
       manager.start();
       manager.destroy();
@@ -205,7 +201,6 @@ describe("ContextManager", () => {
 
     it("does not call writeState after destroy()", () => {
       const { manager } = makeManager({ injectWorkspaceContext: true, refreshIntervalMs: 3000 });
-      managersToCleanup.push(manager);
 
       manager.start();
       // Let the one-shot 2-second warmup timer in start() fire before we
@@ -223,7 +218,6 @@ describe("ContextManager", () => {
     it("stops the periodic interval when feature is disabled via updateSettings", () => {
       const clearIntervalSpy = vi.spyOn(global, "clearInterval");
       const { manager } = makeManager({ injectWorkspaceContext: true });
-      managersToCleanup.push(manager);
 
       manager.start();
       clearIntervalSpy.mockClear();
@@ -243,7 +237,6 @@ describe("ContextManager", () => {
       const setIntervalSpy = vi.spyOn(global, "setInterval");
       const clearIntervalSpy = vi.spyOn(global, "clearInterval");
       const { manager } = makeManager({ injectWorkspaceContext: true, refreshIntervalMs: 3000 });
-      managersToCleanup.push(manager);
 
       manager.start();
       setIntervalSpy.mockClear();
@@ -260,7 +253,6 @@ describe("ContextManager", () => {
     it("does not restart periodic refresh when the interval is unchanged", () => {
       const setIntervalSpy = vi.spyOn(global, "setInterval");
       const { manager } = makeManager({ injectWorkspaceContext: true, refreshIntervalMs: 3000 });
-      managersToCleanup.push(manager);
 
       manager.start();
       setIntervalSpy.mockClear();

@@ -37,8 +37,8 @@ export class WorkspaceContext {
     this.app.workspace.iterateAllLeaves((leaf: WorkspaceLeaf) => {
       // Get the file from the leaf's view state, works for all view types
       const file = (leaf.view as View & { file?: { path: string; name: string } })?.file;
-      const path = file?.path as string | undefined;
-      const name = file?.name as string | undefined;
+      const path = file?.path;
+      const name = file?.name;
       if (path && name && !seen.has(path)) {
         seen.add(path);
         tabs.push({

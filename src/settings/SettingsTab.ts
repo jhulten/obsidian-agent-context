@@ -14,7 +14,6 @@ export class ContextSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    new Setting(containerEl).setName("Context options").setHeading();
 
     new Setting(containerEl)
       .setName("Inject workspace context")

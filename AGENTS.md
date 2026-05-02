@@ -13,9 +13,16 @@ Obsidian plugin that records workspace state (open tabs, active file, selected t
 ```bash
 npm install          # Install dependencies
 npm run build        # Production (type-check + bundle)
+npm run lint         # ESLint with eslint-plugin-obsidianmd (Obsidian-required checks)
 ```
 
 Output: `main.js` (CommonJS bundle)
+
+## Mandatory Checks
+
+**Every code change MUST be verified with the Obsidian-required lint tool before being considered complete.**
+
+Run `npm run lint` after any modification to source files. This executes ESLint configured with `eslint-plugin-obsidianmd` (the lint plugin required by Obsidian's plugin guidelines, see https://github.com/obsidianmd/eslint-plugin). Resolve all reported errors and warnings before finishing the task.
 
 ## Project Structure
 

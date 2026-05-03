@@ -96,6 +96,7 @@ describe("ContextManager", () => {
     vi.clearAllTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   // -------------------------------------------------------------------------

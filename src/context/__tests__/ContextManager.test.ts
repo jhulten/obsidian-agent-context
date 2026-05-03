@@ -323,8 +323,6 @@ describe("ContextManager", () => {
 
   describe("writeState path safety", () => {
     it("writes context.json to the correct path when configDir is inside the vault", () => {
-      const { manager } = makeManager({ injectWorkspaceContext: true });
-
       manager.start();
 
       // The path must be exactly <vault>/<configDir>/context.json.

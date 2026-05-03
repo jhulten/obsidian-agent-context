@@ -96,7 +96,6 @@ describe("ContextManager", () => {
     vi.clearAllTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
-    vi.restoreAllMocks();
   });
 
   // -------------------------------------------------------------------------
@@ -108,6 +107,8 @@ describe("ContextManager", () => {
       const { manager } = makeManager({ injectWorkspaceContext: false });
 
       manager.start();
+      // vi.runAllTimers() fires the 2-second warmup setTimeout, but writeState()
+      // exits early via the injectWorkspaceContext guard – no write occurs.
       vi.runAllTimers();
 
       expect(mockWriteFile).not.toHaveBeenCalled();
@@ -146,6 +147,25 @@ describe("ContextManager", () => {
       // Advance past the warmup timeout and one periodic tick.
       vi.advanceTimersByTime(DEFAULT_SETTINGS.refreshIntervalMs);
 
+      expect(mockWriteFile).toHaveBeenCalled();
+    });
+
+    it("remains functional across multiple enable/disable/re-enable transitions", () => {
+      const { manager } = makeManager({ injectWorkspaceContext: true });
+
+      // Start enabled.
+      manager.start();
+      expect(mockWriteFile).toHaveBeenCalled();
+
+      // Disable – no further writes on tick.
+      manager.updateSettings({ ...DEFAULT_SETTINGS, injectWorkspaceContext: false });
+      mockWriteFile.mockClear();
+      vi.advanceTimersByTime(DEFAULT_SETTINGS.refreshIntervalMs);
+      expect(mockWriteFile).not.toHaveBeenCalled();
+
+      // Re-enable – writes resume on the next periodic tick.
+      manager.updateSettings({ ...DEFAULT_SETTINGS, injectWorkspaceContext: true });
+      vi.advanceTimersByTime(DEFAULT_SETTINGS.refreshIntervalMs);
       expect(mockWriteFile).toHaveBeenCalled();
     });
   });
@@ -295,8 +315,22 @@ describe("ContextManager", () => {
   // -------------------------------------------------------------------------
 
   describe("writeState path safety", () => {
-    it("refuses to write outside the vault directory", () => {
-      // Simulate a malicious configDir that escapes the vault root.
+    it("writes context.json to the correct path when configDir is inside the vault", () => {
+      const { manager } = makeManager({ injectWorkspaceContext: true });
+
+      manager.start();
+
+      // The path must be exactly <vault>/<configDir>/context.json.
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        "/vault/.obsidian/context.json",
+        expect.any(String),
+        "utf-8",
+        expect.any(Function)
+      );
+    });
+
+    it("refuses to write when a relative configDir traverses outside the vault", () => {
+      // Simulate a relative configDir that escapes the vault root via "..".
       const maliciousManager = new ContextManager({
         app: {
           workspace: { on: vi.fn().mockReturnValue({}), offref: vi.fn() },
@@ -311,6 +345,43 @@ describe("ContextManager", () => {
       maliciousManager.start();
 
       // Escaping the vault must prevent any write attempt entirely.
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it("refuses to write when configDir is an absolute path outside the vault", () => {
+      // path.resolve() treats an absolute configDir as overriding basePath entirely,
+      // so "/etc" resolves to "/etc/context.json" which is outside "/vault/".
+      const maliciousManager = new ContextManager({
+        app: {
+          workspace: { on: vi.fn().mockReturnValue({}), offref: vi.fn() },
+        } as never,
+        settings: { ...DEFAULT_SETTINGS },
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => "/etc",
+        registerEvent: vi.fn(),
+      });
+      managersToCleanup.push(maliciousManager);
+
+      maliciousManager.start();
+
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it("refuses to write when getVaultBasePath returns an empty string", () => {
+      // writeState() has an early-return guard for falsy basePath values.
+      const noBaseManager = new ContextManager({
+        app: {
+          workspace: { on: vi.fn().mockReturnValue({}), offref: vi.fn() },
+        } as never,
+        settings: { ...DEFAULT_SETTINGS },
+        getVaultBasePath: () => "",
+        getConfigDir: () => ".obsidian",
+        registerEvent: vi.fn(),
+      });
+      managersToCleanup.push(noBaseManager);
+
+      noBaseManager.start();
+
       expect(mockWriteFile).not.toHaveBeenCalled();
     });
   });

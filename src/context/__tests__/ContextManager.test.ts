@@ -168,6 +168,13 @@ describe("ContextManager", () => {
       vi.advanceTimersByTime(DEFAULT_SETTINGS.refreshIntervalMs);
       expect(mockWriteFile).toHaveBeenCalled();
     });
+
+    // TODO: add tests verifying that workspace event listeners
+    // (active-leaf-change, file-open, file-close, layout-change,
+    // editor-selection-change) are registered when injectWorkspaceContext
+    // transitions false→true and deregistered when it transitions true→false
+    // via updateSettings(). This requires stubbing app.workspace.on/offref
+    // at a finer grain and is tracked as a follow-up to this PR.
   });
 
   // -------------------------------------------------------------------------

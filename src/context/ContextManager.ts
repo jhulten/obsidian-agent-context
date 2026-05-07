@@ -1,6 +1,6 @@
 import { App, EventRef, MarkdownView, Workspace } from "obsidian";
 import { writeFile } from "fs";
-import { join, resolve, sep } from "path";
+import { resolve, sep } from "path";
 import { PluginSettings } from "../types";
 import { WorkspaceContext } from "./WorkspaceContext";
 

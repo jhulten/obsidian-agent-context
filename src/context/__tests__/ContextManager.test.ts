@@ -28,7 +28,7 @@ vi.mock("obsidian", () => ({
 
 // Capture writeFile calls without touching the real filesystem.
 vi.mock("fs", () => ({
-  writeFile: (...args: unknown[]) => mockWriteFile(...args),
+  writeFile: (...args: unknown[]) => void mockWriteFile(...args),
 }));
 
 // Stub WorkspaceContext so ContextManager tests stay focused.
@@ -62,6 +62,7 @@ function makeManager(overrides: Partial<PluginSettings> = {}, cleanup: boolean =
     app,
     settings,
     getVaultBasePath: () => "/vault",
+    // eslint-disable-next-line obsidianmd/hardcoded-config-path
     getConfigDir: () => ".obsidian",
     registerEvent,
   });
@@ -183,7 +184,8 @@ describe("ContextManager", () => {
 
   describe("periodic refresh", () => {
     it("starts a periodic interval when enabled", () => {
-      const setIntervalSpy = vi.spyOn(global, "setInterval");
+      // eslint-disable-next-line obsidianmd/prefer-active-doc
+      const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
       const { manager } = makeManager({ injectWorkspaceContext: true, refreshIntervalMs: 3000 });
 
       manager.start();
@@ -195,7 +197,8 @@ describe("ContextManager", () => {
     });
 
     it("does not start a periodic interval when disabled", () => {
-      const setIntervalSpy = vi.spyOn(global, "setInterval");
+      // eslint-disable-next-line obsidianmd/prefer-active-doc
+      const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
       const { manager } = makeManager({ injectWorkspaceContext: false, refreshIntervalMs: 3000 });
 
       manager.start();
@@ -217,7 +220,8 @@ describe("ContextManager", () => {
     });
 
     it("stops the periodic interval on destroy()", () => {
-      const clearIntervalSpy = vi.spyOn(global, "clearInterval");
+      // eslint-disable-next-line obsidianmd/prefer-active-doc
+      const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
       const { manager } = makeManager({ injectWorkspaceContext: true });
 
       manager.start();
@@ -243,7 +247,8 @@ describe("ContextManager", () => {
     });
 
     it("stops the periodic interval when feature is disabled via updateSettings", () => {
-      const clearIntervalSpy = vi.spyOn(global, "clearInterval");
+      // eslint-disable-next-line obsidianmd/prefer-active-doc
+      const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
       const { manager } = makeManager({ injectWorkspaceContext: true });
 
       manager.start();
@@ -255,7 +260,8 @@ describe("ContextManager", () => {
     });
 
     it("starts periodic interval when feature is enabled via updateSettings", () => {
-      const setIntervalSpy = vi.spyOn(global, "setInterval");
+      // eslint-disable-next-line obsidianmd/prefer-active-doc
+      const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
       const { manager } = makeManager({ injectWorkspaceContext: false, refreshIntervalMs: 3000 });
 
       manager.start();
@@ -274,8 +280,10 @@ describe("ContextManager", () => {
 
   describe("updateSettings – interval change", () => {
     it("restarts periodic refresh with the new interval", () => {
-      const setIntervalSpy = vi.spyOn(global, "setInterval");
-      const clearIntervalSpy = vi.spyOn(global, "clearInterval");
+      // eslint-disable-next-line obsidianmd/prefer-active-doc
+      const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
+      // eslint-disable-next-line obsidianmd/prefer-active-doc
+      const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
       const { manager } = makeManager({ injectWorkspaceContext: true, refreshIntervalMs: 3000 });
 
       manager.start();
@@ -291,7 +299,8 @@ describe("ContextManager", () => {
     });
 
     it("does not restart periodic refresh when the interval is unchanged", () => {
-      const setIntervalSpy = vi.spyOn(global, "setInterval");
+      // eslint-disable-next-line obsidianmd/prefer-active-doc
+      const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
       const { manager } = makeManager({ injectWorkspaceContext: true, refreshIntervalMs: 3000 });
 
       manager.start();
@@ -304,7 +313,8 @@ describe("ContextManager", () => {
     });
 
     it("does not start a periodic interval when feature is disabled and interval changes", () => {
-      const setIntervalSpy = vi.spyOn(global, "setInterval");
+      // eslint-disable-next-line obsidianmd/prefer-active-doc
+      const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
       const { manager } = makeManager({ injectWorkspaceContext: false, refreshIntervalMs: 3000 });
 
       manager.start();
@@ -329,6 +339,7 @@ describe("ContextManager", () => {
 
       // The path must be exactly <vault>/<configDir>/context.json.
       expect(mockWriteFile).toHaveBeenCalledWith(
+        // eslint-disable-next-line obsidianmd/hardcoded-config-path
         "/vault/.obsidian/context.json",
         expect.any(String),
         "utf-8",
@@ -351,11 +362,8 @@ describe("ContextManager", () => {
 
       maliciousManager.start();
 
-      // writeFile must not be called with a path outside /vault/
-      const outsideVaultCalls = mockWriteFile.mock.calls.filter(
-        ([args]: string[]) => !args[0].startsWith("/vault")
-      );
-      expect(outsideVaultCalls).toHaveLength(0);
+      // Escaping the vault must prevent any write attempt entirely.
+      expect(mockWriteFile).not.toHaveBeenCalled();
 
       maliciousManager.destroy();
     });
@@ -387,6 +395,7 @@ describe("ContextManager", () => {
         } as never,
         settings: { ...DEFAULT_SETTINGS },
         getVaultBasePath: () => "",
+        // eslint-disable-next-line obsidianmd/hardcoded-config-path
         getConfigDir: () => ".obsidian",
         registerEvent: vi.fn(),
       });

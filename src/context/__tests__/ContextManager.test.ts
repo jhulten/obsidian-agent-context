@@ -178,12 +178,173 @@ describe("ContextManager", () => {
       expect(mockWriteFile).toHaveBeenCalled();
     });
 
-    // TODO: add tests verifying that workspace event listeners
-    // (active-leaf-change, file-open, file-close, layout-change,
-    // editor-selection-change) are registered when injectWorkspaceContext
-    // transitions false→true and deregistered when it transitions true→false
-    // via updateSettings(). This requires stubbing app.workspace.on/offref
-    // at a finer grain and is tracked as a follow-up to this PR.
+  });
+
+  // -------------------------------------------------------------------------
+  // Listener lifecycle – injectWorkspaceContext transitions
+  // Verifies that updateListeners() correctly registers/deregisters the five
+  // workspace event listeners as injectWorkspaceContext is toggled.
+  // -------------------------------------------------------------------------
+
+  describe("listener lifecycle", () => {
+    it("registers 5 listeners on start() when enabled", () => {
+      const settings = { ...DEFAULT_SETTINGS, injectWorkspaceContext: true };
+      const workspaceOn = vi.fn().mockReturnValue({});
+      const workspaceOffref = vi.fn();
+      const registerEvent = vi.fn();
+
+      const manager = new ContextManager({
+        app: { workspace: { on: workspaceOn, offref: workspaceOffref } } as never,
+        settings,
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => ".obsidian",
+        registerEvent,
+      });
+      managersToCleanup.push(manager);
+
+      manager.start();
+
+      expect(workspaceOn).toHaveBeenCalledTimes(5);
+      expect(registerEvent).toHaveBeenCalledTimes(5);
+    });
+
+    it("registers no listeners on start() when disabled", () => {
+      const settings = { ...DEFAULT_SETTINGS, injectWorkspaceContext: false };
+      const workspaceOn = vi.fn().mockReturnValue({});
+      const registerEvent = vi.fn();
+
+      const manager = new ContextManager({
+        app: { workspace: { on: workspaceOn, offref: vi.fn() } } as never,
+        settings,
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => ".obsidian",
+        registerEvent,
+      });
+      managersToCleanup.push(manager);
+
+      manager.start();
+
+      expect(workspaceOn).not.toHaveBeenCalled();
+      expect(registerEvent).not.toHaveBeenCalled();
+    });
+
+    it("registers listeners when feature is enabled via updateSettings (false→true)", () => {
+      const workspaceOn = vi.fn().mockReturnValue({});
+      const registerEvent = vi.fn();
+
+      const manager = new ContextManager({
+        app: { workspace: { on: workspaceOn, offref: vi.fn() } } as never,
+        settings: { ...DEFAULT_SETTINGS, injectWorkspaceContext: false },
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => ".obsidian",
+        registerEvent,
+      });
+      managersToCleanup.push(manager);
+
+      manager.start();
+      expect(workspaceOn).not.toHaveBeenCalled();
+
+      manager.updateSettings({ ...DEFAULT_SETTINGS, injectWorkspaceContext: true });
+
+      expect(workspaceOn).toHaveBeenCalledTimes(5);
+      expect(registerEvent).toHaveBeenCalledTimes(5);
+    });
+
+    it("deregisters listeners when feature is disabled via updateSettings (true→false)", () => {
+      const workspaceOn = vi.fn().mockReturnValue({});
+      const workspaceOffref = vi.fn();
+      const registerEvent = vi.fn();
+
+      const manager = new ContextManager({
+        app: { workspace: { on: workspaceOn, offref: workspaceOffref } } as never,
+        settings: { ...DEFAULT_SETTINGS, injectWorkspaceContext: true },
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => ".obsidian",
+        registerEvent,
+      });
+      managersToCleanup.push(manager);
+
+      manager.start();
+      // 5 refs were registered
+      expect(workspaceOn).toHaveBeenCalledTimes(5);
+
+      manager.updateSettings({ ...DEFAULT_SETTINGS, injectWorkspaceContext: false });
+
+      // offref called once per registered ref
+      expect(workspaceOffref).toHaveBeenCalledTimes(5);
+    });
+
+    it("does not double-register listeners on repeated updateSettings with feature still enabled", () => {
+      const workspaceOn = vi.fn().mockReturnValue({});
+      const registerEvent = vi.fn();
+
+      const manager = new ContextManager({
+        app: { workspace: { on: workspaceOn, offref: vi.fn() } } as never,
+        settings: { ...DEFAULT_SETTINGS, injectWorkspaceContext: true },
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => ".obsidian",
+        registerEvent,
+      });
+      managersToCleanup.push(manager);
+
+      manager.start();
+      const onCallsAfterStart = workspaceOn.mock.calls.length; // 5
+
+      // Calling updateSettings with feature still enabled must not add more listeners
+      manager.updateSettings({ ...DEFAULT_SETTINGS, injectWorkspaceContext: true });
+
+      expect(workspaceOn.mock.calls.length).toBe(onCallsAfterStart);
+    });
+
+    it("re-registers listeners after a full disable→re-enable cycle", () => {
+      const workspaceOn = vi.fn().mockReturnValue({});
+      const workspaceOffref = vi.fn();
+      const registerEvent = vi.fn();
+
+      const manager = new ContextManager({
+        app: { workspace: { on: workspaceOn, offref: workspaceOffref } } as never,
+        settings: { ...DEFAULT_SETTINGS, injectWorkspaceContext: true },
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => ".obsidian",
+        registerEvent,
+      });
+      managersToCleanup.push(manager);
+
+      // Start enabled → 5 listeners registered
+      manager.start();
+      expect(workspaceOn).toHaveBeenCalledTimes(5);
+
+      // Disable → 5 listeners removed
+      manager.updateSettings({ ...DEFAULT_SETTINGS, injectWorkspaceContext: false });
+      expect(workspaceOffref).toHaveBeenCalledTimes(5);
+
+      // Re-enable → 5 listeners registered again (10 total on calls)
+      manager.updateSettings({ ...DEFAULT_SETTINGS, injectWorkspaceContext: true });
+      expect(workspaceOn).toHaveBeenCalledTimes(10);
+      expect(registerEvent).toHaveBeenCalledTimes(10);
+    });
+
+    it("registers listeners for the correct event names", () => {
+      const workspaceOn = vi.fn().mockReturnValue({});
+
+      const manager = new ContextManager({
+        app: { workspace: { on: workspaceOn, offref: vi.fn() } } as never,
+        settings: { ...DEFAULT_SETTINGS, injectWorkspaceContext: true },
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => ".obsidian",
+        registerEvent: vi.fn(),
+      });
+      managersToCleanup.push(manager);
+
+      manager.start();
+
+      const registeredEvents = workspaceOn.mock.calls.map(([name]: [string]) => name);
+      expect(registeredEvents).toContain("active-leaf-change");
+      expect(registeredEvents).toContain("file-open");
+      expect(registeredEvents).toContain("file-close");
+      expect(registeredEvents).toContain("layout-change");
+      expect(registeredEvents).toContain("editor-selection-change");
+    });
   });
 
   // -------------------------------------------------------------------------

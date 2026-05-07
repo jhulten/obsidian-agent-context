@@ -1,3 +1,5 @@
+/* eslint-disable obsidianmd/hardcoded-config-path */
+/* eslint-disable obsidianmd/prefer-active-doc */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ContextManager } from "../ContextManager";
 import type { PluginSettings } from "../../types";
@@ -8,7 +10,7 @@ import { DEFAULT_SETTINGS } from "../../types";
 // vi.hoisted() variables are available inside vi.mock() factory functions.
 // ---------------------------------------------------------------------------
 
-const { mockWriteFile, mockGatherState } = vi.hoisted(() => ({
+const { mockWriteFile, mockGatherState, mockRealpathSync } = vi.hoisted(() => ({
   mockWriteFile: vi.fn(),
   mockGatherState: vi.fn().mockReturnValue({
     ts: 1_000,
@@ -16,6 +18,8 @@ const { mockWriteFile, mockGatherState } = vi.hoisted(() => ({
     tabs: [],
     selection: null,
   }),
+  // Default: identity (no symlinks). Override per-test to simulate symlinks.
+  mockRealpathSync: vi.fn().mockImplementation((p: string) => p),
 }));
 
 // Stub the heavy Obsidian module – only MarkdownView is used as a runtime value;
@@ -27,8 +31,10 @@ vi.mock("obsidian", () => ({
 }));
 
 // Capture writeFile calls without touching the real filesystem.
+// realpathSync is mocked so we can simulate symlinks without touching the FS.
 vi.mock("fs", () => ({
-  writeFile: (...args: unknown[]) => mockWriteFile(...args),
+  writeFile: (...args: unknown[]): unknown => mockWriteFile(...args),
+  realpathSync: (...args: unknown[]): unknown => mockRealpathSync(...args),
 }));
 
 // Stub WorkspaceContext so ContextManager tests stay focused.
@@ -86,6 +92,9 @@ describe("ContextManager", () => {
     vi.useFakeTimers();
     mockWriteFile.mockClear();
     mockGatherState.mockClear();
+    // Reset to identity (no symlinks) before each test.
+    mockRealpathSync.mockReset();
+    mockRealpathSync.mockImplementation((p: string) => p);
     managersToCleanup = [];
   });
 
@@ -175,6 +184,151 @@ describe("ContextManager", () => {
     // transitions false→true and deregistered when it transitions true→false
     // via updateSettings(). This requires stubbing app.workspace.on/offref
     // at a finer grain and is tracked as a follow-up to this PR.
+  });
+
+  // -------------------------------------------------------------------------
+  // Symlink safety in writeState
+  // The string startsWith() check passes when configDir is a symlink whose
+  // lexical path is inside the vault but whose real path (after symlink
+  // resolution) points elsewhere.  realpathSync() must be used on both the
+  // vault root and the candidate file path before the guard comparison.
+  // -------------------------------------------------------------------------
+
+  describe("writeState symlink safety", () => {
+    it("allows writing when realpathSync confirms path stays inside the vault (no symlinks)", () => {
+      // Identity mock – no symlinks in play; should write normally.
+      const { manager } = makeManager({ injectWorkspaceContext: true });
+
+      manager.start();
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        "/vault/.obsidian/context.json",
+        expect.any(String),
+        "utf-8",
+        expect.any(Function)
+      );
+    });
+
+    it("refuses to write when .obsidian is a symlink pointing outside the vault", () => {
+      // Lexical path: /vault/.obsidian/context.json  → passes startsWith("/vault/")
+      // Real path:    /outside/context.json          → must be rejected
+      mockRealpathSync.mockImplementation((p: string) => {
+        if (p === "/vault/.obsidian/context.json") return "/outside/context.json";
+        return p; // vault root itself is not a symlink
+      });
+
+      const manager = new ContextManager({
+        app: {
+          workspace: { on: vi.fn().mockReturnValue({}), offref: vi.fn() },
+        } as never,
+        settings: { ...DEFAULT_SETTINGS },
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => ".obsidian",
+        registerEvent: vi.fn(),
+      });
+      managersToCleanup.push(manager);
+
+      manager.start();
+
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it("refuses to write when a parent directory of .obsidian is a symlink pointing outside the vault", () => {
+      // Simulates a crafted vault where /vault/.obsidian is actually
+      // /vault/link which symlinks to /tmp/attacker
+      mockRealpathSync.mockImplementation((p: string) => {
+        if (p === "/vault/.obsidian/context.json") return "/tmp/attacker/context.json";
+        return p;
+      });
+
+      const manager = new ContextManager({
+        app: {
+          workspace: { on: vi.fn().mockReturnValue({}), offref: vi.fn() },
+        } as never,
+        settings: { ...DEFAULT_SETTINGS },
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => ".obsidian",
+        registerEvent: vi.fn(),
+      });
+      managersToCleanup.push(manager);
+
+      manager.start();
+
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it("allows writing when vault root itself resolves via a symlink but path stays consistent", () => {
+      // /vault is itself a symlink to /real/vault.
+      // Both sides of the comparison are resolved consistently, so writing is allowed.
+      mockRealpathSync.mockImplementation((p: string) => {
+        // Resolve the vault root symlink transparently
+        if (p === "/vault") return "/real/vault";
+        if (p === "/vault/.obsidian/context.json") return "/real/vault/.obsidian/context.json";
+        return p;
+      });
+
+      const manager = new ContextManager({
+        app: {
+          workspace: { on: vi.fn().mockReturnValue({}), offref: vi.fn() },
+        } as never,
+        settings: { ...DEFAULT_SETTINGS },
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => ".obsidian",
+        registerEvent: vi.fn(),
+      });
+      managersToCleanup.push(manager);
+
+      manager.start();
+
+      expect(mockWriteFile).toHaveBeenCalled();
+    });
+
+    it("refuses to write when vault root symlink resolves differently from the file path", () => {
+      // /vault → /real/vault, but the file's realpath escapes to /attacker/
+      mockRealpathSync.mockImplementation((p: string) => {
+        if (p === "/vault") return "/real/vault";
+        if (p === "/vault/.obsidian/context.json") return "/attacker/context.json";
+        return p;
+      });
+
+      const manager = new ContextManager({
+        app: {
+          workspace: { on: vi.fn().mockReturnValue({}), offref: vi.fn() },
+        } as never,
+        settings: { ...DEFAULT_SETTINGS },
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => ".obsidian",
+        registerEvent: vi.fn(),
+      });
+      managersToCleanup.push(manager);
+
+      manager.start();
+
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it("refuses to write when realpathSync throws (e.g. broken symlink)", () => {
+      // If realpathSync throws, writeState must catch it and not write.
+      mockRealpathSync.mockImplementation((p: string) => {
+        if (p === "/vault/.obsidian/context.json") throw new Error("ENOENT: no such file");
+        return p;
+      });
+
+      const manager = new ContextManager({
+        app: {
+          workspace: { on: vi.fn().mockReturnValue({}), offref: vi.fn() },
+        } as never,
+        settings: { ...DEFAULT_SETTINGS },
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => ".obsidian",
+        registerEvent: vi.fn(),
+      });
+      managersToCleanup.push(manager);
+
+      manager.start();
+
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -375,6 +529,27 @@ describe("ContextManager", () => {
       managersToCleanup.push(maliciousManager);
 
       maliciousManager.start();
+
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it("refuses to write when a configDir component is a prefix of the vault root but not inside it", () => {
+      // e.g. vault is /vault, configDir resolves to /vault-evil/.obsidian
+      // The old join()-based path would be /vault-evil/.obsidian/context.json,
+      // which does NOT start with /vault/ so the string check blocks it.
+      // This test confirms the string check also handles this correctly.
+      const manager = new ContextManager({
+        app: {
+          workspace: { on: vi.fn().mockReturnValue({}), offref: vi.fn() },
+        } as never,
+        settings: { ...DEFAULT_SETTINGS },
+        getVaultBasePath: () => "/vault",
+        getConfigDir: () => "../vault-evil/.obsidian",
+        registerEvent: vi.fn(),
+      });
+      managersToCleanup.push(manager);
+
+      manager.start();
 
       expect(mockWriteFile).not.toHaveBeenCalled();
     });
